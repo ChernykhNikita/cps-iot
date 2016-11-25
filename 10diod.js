@@ -7,14 +7,11 @@ console.log("Starting the code");
 
 var board = new firmata.Board("/dev/ttyACM0", function(){
     console.log("Connecting to Arduino");
-    console.log("Activation of pin 13");
-    board.pinMode(13, board.MODES.OUTPUT);          // pin13 as out
-    console.log("Enabling Push Button on pin 2");
-    board.pinMode(2, board.MODES.INPUT);
+    board.pinMode(0, board.MODES.ANALOG); // enable analog pin 0
 });
 
 function handler(req,res){
-   fs.readFile(__dirname + "/7diod.html",
+   fs.readFile(__dirname + "/10diod.html",
    function (err, data) {
     if (err) {
         res.writeHead(500, {"Content-Type":"text/plain"});
@@ -27,15 +24,25 @@ function handler(req,res){
 
 }
 
+var desiredValue = 0; //desired value var
+
 http.listen(8080); // server will listen on port 8080
 
 var sendValueViaSocket = function(){}; // var for sending messages
 
 board.on("ready", function(){
     
+board.analogRead(0, function(value){
+   desiredValue = value; // continous read of analog pin 0 
+});
+    
 
 io.sockets.on("connection", function(socket) {
     socket.emit("messageToClient", "Srv connected, brd OK");
+    
+    
+    setInterval(sendValues, 40, socket); // on 40ms trigger func. sendValues
+    
     
     sendValueViaSocket = function (value) {
         io.sockets.emit("messageToClient", value);
@@ -44,21 +51,14 @@ io.sockets.on("connection", function(socket) {
     
 }); // end of sockets.on connection
 
-board.digitalRead(2, function(value){
-    if (value == 0) {
-        console.log("LED OFF");
-        board.digitalWrite(13, board.LOW);
-        sendValueViaSocket(0);
-    }
-    
-     if (value == 1) {
-        console.log("LED ON");
-        board.digitalWrite(13, board.HIGH);
-        sendValueViaSocket(1);
-    }
-    
-}); // end of board.digitalRead
-
 }); // end of board.on ready
+
+function sendValues (socket) {
+    
+    socket.emit("clientReadValues",
+    {
+        "desiredValue": desiredValue
+    });
+};
 
 
