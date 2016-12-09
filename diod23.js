@@ -25,7 +25,7 @@ var Ki = 0.008; // integral factor
 var Kd = 0.15; // differential factor
 
 var pwm = 0;
-var pwmLimit = 110;
+var pwmLimit = 255;
 var lastPWM = 0; // to check, weather pwm has changed, not to call it all the time
 
 var err = 0; // variable for second pid implementation
